@@ -42,3 +42,7 @@ captures/
 
 # Keystore files
 *.jks
+/signalling/coturn_conf/*.pem
+/signalling/node_modules/*
+/signalling/package-lock.json
+/signalling/coturn_conf/users.conf

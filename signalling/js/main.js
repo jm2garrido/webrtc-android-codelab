@@ -6,12 +6,15 @@ var isStarted = false;
 var localStream;
 var pc;
 var remoteStream;
-var turnReady;
+var turnReady = true;
 
 var pcConfig = {
-  'iceServers': [{
-    'url': 'stun:stun.l.google.com:19302'
-  }]
+  'iceServers': [
+	{
+    		//'url': 'stun:stun.l.google.com:19302'
+	
+	}, 
+  ]
 };
 
 // Set up audio and video regardless of what devices are present.
@@ -29,7 +32,7 @@ var room = 'vivek17';
  room = prompt('Enter room name:');
 
 //var socket = io.connect("http://172.245.132.132:1794");
-var socket = io.connect();
+var socket = io.connect("https://builder.helios-social.eu:1794");
 if (room !== '') {
   socket.emit('create or join', room);
   console.log('Attempted to create or  join room', room);
@@ -80,8 +83,8 @@ socket.on('message', function(message) {
     doAnswer();
   } else if (message.type === 'answer' && isStarted) {
     console.log("received answer");
-    pc.setRemoteDescription(new RTCSsseionDescription(message));
-    console.log(pc.getRemoteDescription());
+    pc.setRemoteDescription(new RTCSessionDescription(message));
+    //console.log(pc.getRemoteDescription());
   } else if (message.type === 'candidate' && isStarted) {
     var candidate = new RTCIceCandidate({
       sdpMLineIndex: message.label,
@@ -104,12 +107,13 @@ navigator.mediaDevices.getUserMedia({
 })
 .then(gotStream)
 .catch(function(e) {
-  alert('getUserMedia() error: ' + e.name);
+  alert('getUserMedia() error: ' + e.name +'--'+e.message );
 });
 
 function gotStream(stream) {
   console.log('Adding local stream.');
-  localVideo.src = window.URL.createObjectURL(stream);
+  //localVideo.src = window.URL.createObjectURL(stream);
+  localVideo.srcObject = stream
   localStream = stream;
   sendMessage('got user media');
   if (isInitiator) {
@@ -121,15 +125,17 @@ var constraints = {
   video: true
 };
 
-console.log('Getting user media with constraints', constraints);
 
+console.log('Getting user media with constraints', constraints);
+console.log("turn & stun servers ", pcConfig.iceServers);
+/*
 if (location.hostname !== 'localhost') {
   requestTurn(
 //    'https://computeengineondemand.appspot.com/turn?username=41784574&key=4080218913'
-    'https://service.xirsys.com/ice?ident=vivekchanddru&secret=ad6ce53a-e6b5-11e6-9685-937ad99985b9&domain=www.vivekc.xyz&application=default&room=testing&secure=1'
-  
 );
 }
+*/
+
 
 function maybeStart() {
   console.log('>>>>>>> maybeStart() ', isStarted, localStream, isChannelReady);
@@ -153,9 +159,10 @@ window.onbeforeunload = function() {
 
 function createPeerConnection() {
   try {
-    pc = new RTCPeerConnection(null);
+    //pc = new RTCPeerConnection(null);
+    pc = new RTCPeerConnection(pcConfig);
     pc.onicecandidate = handleIceCandidate;
-    pc.onaddstream = handleRemoteStreamAdded;
+    pc.ontrack = handleRemoteStreamAdded;
     pc.onremovestream = handleRemoteStreamRemoved;
     console.log('Created RTCPeerConnnection');
   } catch (e) {
@@ -181,8 +188,9 @@ function handleIceCandidate(event) {
 
 function handleRemoteStreamAdded(event) {
   console.log('Remote stream added.');
-  remoteVideo.src = window.URL.createObjectURL(event.stream);
-  remoteStream = event.stream;
+  //remoteVideo.src = window.URL.createObjectURL(event.stream);
+  remoteVideo.srcObject = event.streams[0];
+  remoteStream = event.streams[0];
 }
 
 function handleCreateOfferError(event) {
@@ -213,15 +221,20 @@ function setLocalAndSendMessage(sessionDescription) {
 function onCreateSessionDescriptionError(error) {
   trace('Failed to create session description: ' + error.toString());
 }
-
+/*
 function requestTurn(turnURL) {
+  console.log("Entering in requestTurn")
   var turnExists = false;
   for (var i in pcConfig.iceServers) {
-    if (pcConfig.iceServers[i].url.substr(0, 5) === 'turn:') {
+    if (pcConfig.iceServers[i].urls.substr(0, 5) === 'turn:') {
       turnExists = true;
       turnReady = true;
       break;
     }
+  } 
+
+  if (!turnExists) {
+     console.log("Warning; no TURN server")
   }
   if (!turnExists) {
     console.log('Getting TURN server from ', turnURL);
@@ -241,13 +254,9 @@ function requestTurn(turnURL) {
     xhr.open('GET', turnURL, true);
     xhr.send();
   }
-}
 
-function handleRemoteStreamAdded(event) {
-  console.log('Remote stream added.');
-  remoteVideo.src = window.URL.createObjectURL(event.stream);
-  remoteStream = event.stream;
 }
+*/
 
 function handleRemoteStreamRemoved(event) {
   console.log('Remote stream removed. Event: ', event);
