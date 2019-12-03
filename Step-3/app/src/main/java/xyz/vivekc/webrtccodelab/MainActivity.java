@@ -57,7 +57,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     Button hangup;
     PeerConnection localPeer;
-    List<IceServer> iceServers;
+    IceServer[] iceServers = {
+            new IceServer("stun:builder.helios-social.eu:3478", null, null),
+            new IceServer("turns:builder.helios-social.eu:5349", "pepe", "pepelui")
+    };
     EglBase rootEglBase;
 
     boolean gotUserMedia;
@@ -95,21 +98,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private void getIceServers() {
-        //get Ice servers using xirsys
-        byte[] data = new byte[0];
-        try {
-            data = ("<xirsys_ident>:<xirsys_secret>").getBytes("UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
-        String authToken = "Basic " + Base64.encodeToString(data, Base64.NO_WRAP);
-        Utils.getInstance().getRetrofitInstance().getIceCandidates(authToken).enqueue(new Callback<TurnServerPojo>() {
-            @Override
-            public void onResponse(@NonNull Call<TurnServerPojo> call, @NonNull Response<TurnServerPojo> response) {
-                TurnServerPojo body = response.body();
-                if (body != null) {
-                    iceServers = body.iceServerList.iceServers;
-                }
+        Log.d("getIceServers", "IceServers\n" + iceServers.toString());
                 for (IceServer iceServer : iceServers) {
                     if (iceServer.credential == null) {
                         PeerConnection.IceServer peerIceServer = PeerConnection.IceServer.builder(iceServer.url).createIceServer();
@@ -122,14 +111,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         peerIceServers.add(peerIceServer);
                     }
                 }
-                Log.d("onApiResponse", "IceServers\n" + iceServers.toString());
-            }
-
-            @Override
-            public void onFailure(@NonNull Call<TurnServerPojo> call, @NonNull Throwable t) {
-                t.printStackTrace();
-            }
-        });
     }
 
 

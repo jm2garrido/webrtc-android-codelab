@@ -16,6 +16,12 @@ public class IceServer {
     @Expose
     public String credential;
 
+    IceServer(String url,String username,String credential) {
+        this.url = url;
+        this.username = username;
+        this.credential = credential;
+    }
+
     @Override
     public String toString() {
         return "IceServer{" +
